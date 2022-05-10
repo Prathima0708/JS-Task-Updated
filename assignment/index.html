@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JavaScript</title>
+    <style>
+      .container {
+        margin: 1rem;
+      }
+
+      input {
+        padding: 4px;
+        width: 55px;
+        z-index: 1;
+        position: relative;
+        border: none;
+      }
+
+      .sub-item {
+        /* padding: 20px 0 0 20px; */
+        padding: 1rem;
+        margin-left: 1.5rem;
+        position: relative;
+      }
+
+      .sub-item::before {
+        content: "";
+        display: block;
+        position: absolute;
+        width: 39px;
+        height: 1px;
+        background: black;
+        left: 0;
+        top: 30px;
+        background: black;
+      }
+
+      .sub-item::after {
+        content: "";
+        display: block;
+        position: absolute;
+        width: 1px;
+        height: 40px;
+        background: black;
+        left: 0;
+        top: -10px;
+        background: black;
+      }
+
+      .sub-item:not(:last-child)::after {
+        height: 100%;
+      }
+
+      .arrow {
+        display: inline-block;
+        cursor: pointer;
+        transition: all 0.15s;
+        user-select: none;
+      }
+
+      .arrow.open {
+        transform: rotate(90deg);
+        transition: all 0.15s;
+      }
+
+      .arrow:not(.open) ~ .sub-item,
+      .arrow.hide {
+        display: none;
+      }
+
+      button {
+        background-color: white;
+        border: none;
+        font-size: 2rem;
+      }
+
+      #base > .key-value-container > .remove {
+        display: none;
+      }
+
+      .get-json-button {
+        border: 1px solid black;
+        margin: 1rem 0;
+        padding: 7px;
+        font-size: 15px;
+        border-radius: 5px;
+      }
+      .addItem {
+        font-size: 19px;
+        border: 1px solid black;
+        padding: 5px;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <button id="l1" class="title text-center addItem">Add Item</button>
+      <div id="base"></div>
+    </div>
+
+    <template class="key-value">
+      <div class="key-value-container">
+        <span class="arrow hide">▶</span>
+        <input type="text" class="key" placeholder="property" />
+        <input type="text" class="value" placeholder="cost" />
+        <button class="add">+</button>
+        <button class="remove">x</button>
+      </div>
+    </template>
+
+    <script>
+      const base = document.getElementById("base");
+      const addNewExpander = document.querySelector(".addItem");
+      const l1 = document.getElementById("l1");
+      // l1.contentEditable=true
+
+      const keyValueTemplate = document.querySelector(".key-value");
+      const getJsonTemplate = document.querySelector(".get-json");
+
+      function getJSON(container) {
+        const object = {};
+
+        const keyEl = container.querySelector(".key");
+        const valueEl = container.querySelector(".key + .value");
+
+        if (keyEl && keyEl.value) {
+          if (valueEl.style.display !== "none")
+            object[keyEl.value] = valueEl.value;
+          else {
+            let subItem = container.querySelector(".sub-item");
+            const subItems = [subItem];
+            while (subItem.nextElementSibling) {
+              subItems.push(subItem.nextElementSibling);
+              subItem = subItem.nextElementSibling;
+            }
+            let obj = {};
+            subItems.forEach((subItem) => {
+              obj = { ...obj, ...getJSON(subItem) };
+            });
+            object[keyEl.value] = obj;
+          }
+        }
+        return object;
+      }
+
+      function getElementsOfTemplate(element) {
+        return {
+          container: element.querySelector(".key-value-container"),
+          valueEl: element.querySelector(".value"),
+          addEl: element.querySelector(".add"),
+          removeEl: element.querySelector(".remove"),
+          arrowEl: element.querySelector(".arrow"),
+        };
+      }
+
+      function getNode() {
+        const keyValueNode = keyValueTemplate.content.cloneNode(true);
+        const { container, valueEl, addEl, removeEl, arrowEl } =
+          getElementsOfTemplate(keyValueNode);
+
+        arrowEl.addEventListener("click", () => {
+          arrowEl.classList.toggle("open");
+        });
+
+        addEl.addEventListener("click", () => {
+          valueEl.style.display = "none";
+
+          const subItem = document.createElement("div");
+          subItem.classList.add("sub-item");
+          subItem.appendChild(getNode());
+
+          container.appendChild(subItem);
+          arrowEl.classList.remove("hide");
+          arrowEl.classList.add("open");
+        });
+
+        removeEl.addEventListener("click", () => {
+          const subItemEl = container.parentElement;
+          const parentEl = subItemEl.parentElement;
+
+          subItemEl.remove();
+          if (!parentEl.querySelector(".sub-item")) {
+            parentEl.querySelector(".value").style.display = "inline";
+            parentEl.querySelector(".arrow").classList.remove("open");
+            parentEl.querySelector(".arrow").classList.add("hide");
+          }
+        });
+
+        return container;
+      }
+
+      addNewExpander.addEventListener("click", () => {
+        const container = base.appendChild(getNode());
+        const getJSONButton = document.createElement("button");
+        getJSONButton.textContent = "Add Product";
+        getJSONButton.classList.add("get-json-button");
+        base.appendChild(getJSONButton);
+
+        getJSONButton.addEventListener("click", () => {
+          // const res=  JSON.stringify(getJSON(container))
+          console.log(JSON.stringify(getJSON(container)));
+          // console.log(JSON.parse(res))
+        });
+      });
+
+      addNewExpander.click();
+    </script>
+  </body>
+</html>
